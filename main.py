@@ -105,7 +105,7 @@ class Window(QMainWindow, Ui_MainWindow):
         self.computeLength.clicked.connect(self.computeLengthFunction)
         self.viewBtn.clicked.connect(self.viewFunction)
         self.clear.clicked.connect(self.clearFunction)
-        self.test.clicked.connect(self.testFunction)
+        # self.test.clicked.connect(self.testFunction)
 
 
         self.sidewalkPoint_1F_L = [[1, 22.5]]
@@ -438,7 +438,7 @@ class Window(QMainWindow, Ui_MainWindow):
         
 
         if len(order) == 0:
-            return [], 0
+            return 0, [], 0
 
         optimalSeq = [1, 1]
         
@@ -516,12 +516,12 @@ class Window(QMainWindow, Ui_MainWindow):
 
         
 if __name__ == '__main__':
-    appctxt = ApplicationContext()
+    # appctxt = ApplicationContext()
     app = QApplication(sys.argv)
     GUI = Window()
     # GUI2 = Window()
     # view = MyView(GUI)
     GUI.show()
-    exit_code = appctxt.app.exec_()
+    # exit_code = appctxt.app.exec_()
     sys.exit(app.exec_())
 
