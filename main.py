@@ -37,7 +37,7 @@ class Window(QMainWindow, Ui_MainWindow):
         self.containers = {}
         self.lines = []
 
-        with open("./config2.json", "r") as file:
+        with open("./config2.json", "r", encoding='utf-8') as file:
             self.config = json.load(file)
             file.close()
 
@@ -93,10 +93,10 @@ class Window(QMainWindow, Ui_MainWindow):
         self.containers[66].v_pos[1] += 10
         self.containers[65].v_pos[0] += self.containers[65].width + 50
         self.containers[65].v_pos[1] += 10
-        print("66 v_pos : ",self.containers[66].v_pos)
+        # print("66 v_pos : ",self.containers[66].v_pos)
         
-        with open("./config2.json", "w") as file:
-            json.dump(self.config, file, ensure_ascii=False, indent=4)
+        # with open("./config2.json", "w") as file:
+        #     json.dump(self.config, file, ensure_ascii=False, indent=4)
 
         for data in self.config["fix"]["fixarea"]:
             self.scene.addItem(Building(data, self.scene))
@@ -164,8 +164,6 @@ class Window(QMainWindow, Ui_MainWindow):
         else:
             self.totalCatchTargetTime1F.setText("總揀貨時間 = %.3fs" % (time1F + time2F))
 
-
-    
     def ZPath(self):
         originalOrder1F, seq1F, length1F = self.ZPath1()
         originalOrder2F, seq2F, length2F = self.ZPath2()
@@ -183,8 +181,9 @@ class Window(QMainWindow, Ui_MainWindow):
         order = self.order.toPlainText()
         if order == '':
             return 0, [], 0
-        originalOrder = order = order.split(' ')
-        order = [int(i) for i in order]
+        order = order.split(' ')
+        originalOrder = order = [int(i) for i in order if i != '']
+        print("ZPATH 1 order = ", order)
         order = sorted(list(set(order)))
 
         parts1 = [i for i in order if i in range(1, 25)]
@@ -225,9 +224,9 @@ class Window(QMainWindow, Ui_MainWindow):
         order = self.order_2.toPlainText()
         if order == '':
             return 0, [], 0
-        originalOrder = order = order.split(' ')
-        order = [int(i) for i in order]
-
+        order = order.split(' ')
+        order = [int(i) for i in order if i != '']
+        originalOrder = order
         order = sorted(list(set(order)))
 
         parts1 = [i for i in order if i in range(94, 114)]
@@ -430,12 +429,13 @@ class Window(QMainWindow, Ui_MainWindow):
 
     def MTLIPath1F(self):
         order = self.order.toPlainText()
-        originalOrder = order = order.split(' ')
+        order = order.split(' ')
         print(order)
         
-        order = list(set(order))
         order = [int(i) for i in order if i != '']
-        
+        originalOrder = order
+        order = list(set(order))
+
 
         if len(order) == 0:
             return 0, [], 0
@@ -468,10 +468,12 @@ class Window(QMainWindow, Ui_MainWindow):
 
     def MTLIPath2F(self):
         order = self.order_2.toPlainText()
-        originalOrder = order = order.split(' ')
-        print(order)
+        order = order.split(' ')
 
         order = [int(i) for i in order if i != '']
+        originalOrder = order
+        order = list(set(order))
+
         if len(order) == 0:
             return 0, [], 0
 

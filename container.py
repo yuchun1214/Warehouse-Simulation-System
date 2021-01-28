@@ -11,7 +11,7 @@ class Container(QGraphicsRectItem):
         self.height = config["height"]
         try:
             self.coordinary = config["coordinary"]
-            print(self.coordinary)
+            # print(self.coordinary)
         except:
             self.coordinary = [0, 0]
 
