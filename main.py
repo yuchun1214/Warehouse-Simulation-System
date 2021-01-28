@@ -110,8 +110,8 @@ class Window(QMainWindow, Ui_MainWindow):
 
         self.sidewalkPoint_1F_L = [[1, 22.5]]
         self.sidewalkPoint_1F_R = [[7.6, 22.5]]
-        self.v_sidewalkPoint_1F_L = [[150, 460]]
-        self.v_sidewalkPoint_1F_R = [[310, 460]]
+        self.v_sidewalkPoint_1F_L = [[150, 445]]
+        self.v_sidewalkPoint_1F_R = [[310, 445]]
         #
         self.sidewalkPoint_2F_L = [[1, 13.5]]
         self.sidewalkPoint_2F_R = [[7.6, 13.5]]
@@ -309,8 +309,8 @@ class Window(QMainWindow, Ui_MainWindow):
             self.containers[i].toNormal()
         self.sidewalkPoint_1F_L = [[1, 22.5]]
         self.sidewalkPoint_1F_R = [[7.6, 22.5]]
-        self.v_sidewalkPoint_1F_L = [[150, 434]]
-        self.v_sidewalkPoint_1F_R = [[310, 434]]
+        self.v_sidewalkPoint_1F_L = [[150, 445]]
+        self.v_sidewalkPoint_1F_R = [[310, 445]]
 
         self.sidewalkPoint_2F_L = [[1, 13.5]]
         self.sidewalkPoint_2F_R = [[7.6, 13.5]]
