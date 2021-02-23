@@ -9,6 +9,8 @@ class Container(QGraphicsRectItem):
         self._pos = config["pos"]
         self.width = config["width"]
         self.height = config["height"]
+        self.size = config["size"]
+
         try:
             self.coordinary = config["coordinary"]
             # print(self.coordinary)
@@ -34,6 +36,8 @@ class Container(QGraphicsRectItem):
         self.setBrush(self._brush)
         self.isOrder = False
         self.v_pos = self._pos
+        self.distance = 0
+        self.isSideWalk = False
 
 
     def paint(self, painter=None, style=None, widget=None):
@@ -49,6 +53,10 @@ class Container(QGraphicsRectItem):
         super().hide()
         self.text.hide()
 
+    def setColor(self, color):
+        self._brush = color
+        self.update()
+
     def output(self):
         self._pos = [self.pos().x(), self.pos().y()]
         
@@ -56,6 +64,7 @@ class Container(QGraphicsRectItem):
             "num" : self.num,
             "width" : self.width,
             "height" : self.height,
+            "size" : self.size,
             "pos" : self._pos,
             "coordinary" : self.coordinary
         }
@@ -66,5 +75,11 @@ class Container(QGraphicsRectItem):
 
     def toNormal(self):
         self.show()
+        self.isOrder = False
+        self.isSideWalk = False
         self._brush = QBrush()
         self.update()
+
+    def setSidewalk(self):
+        self.hide()
+        self.isSideWalk = True

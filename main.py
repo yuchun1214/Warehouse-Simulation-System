@@ -10,6 +10,9 @@ from building import Building
 import pandas as pd
 import math
 import copy
+import random
+from openpyxl import load_workbook
+
 
 class Window(QMainWindow, Ui_MainWindow):
 
@@ -18,6 +21,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
         super().__init__()
         self.setupUi(self)
+        self.output = []
         
         self.setFixedSize(1560, 900)
         self.setWindowTitle("Warehouse Simulation System")
@@ -55,11 +59,9 @@ class Window(QMainWindow, Ui_MainWindow):
             self.scene.addItem(self.containers[data["num"]])
         
         
+        self.setupLayout()
 
-        
-        
-
-        # with open("config2.json", "w") as file:
+        # with open("config.json", "w") as file:
         #     json.dump(self.config, file, indent=4, ensure_ascii=False)
 
         # for i in range(1, 167):
@@ -68,6 +70,7 @@ class Window(QMainWindow, Ui_MainWindow):
         # pos correctness virtual position
         for i in range(1, 25):
             self.containers[i].v_pos[0] += self.containers[i].width
+        
         for i in range(45, 65):
             self.containers[i].v_pos[0] += self.containers[i].width
 
@@ -95,8 +98,8 @@ class Window(QMainWindow, Ui_MainWindow):
         self.containers[65].v_pos[1] += 10
         # print("66 v_pos : ",self.containers[66].v_pos)
         
-        # with open("./config2.json", "w") as file:
-        #     json.dump(self.config, file, ensure_ascii=False, indent=4)
+        with open("./config2.json", "w") as file:
+            json.dump(self.config, file, ensure_ascii=False, indent=4)
 
         for data in self.config["fix"]["fixarea"]:
             self.scene.addItem(Building(data, self.scene))
@@ -128,41 +131,338 @@ class Window(QMainWindow, Ui_MainWindow):
         self.parts2.append([i for i in range(133, 167)])
 
         self.windows = []
+    
+    def setupLayout(self):
+        self.I_layout = {
+            "A" : [],
+            "B" : [],
+            "C" : []
+        }
+        for i in range(1, 91):
+            self.I_layout["A"].append([i, 0])
+
+        for i in range(91, 108):
+            self.I_layout["B"].append([i, 0])
+        for i in range(114, 127):
+            self.I_layout["B"].append([i, 0])
+        for i in range(133, 144):
+            self.I_layout["B"].append([i, 0])
+        for i in range(150, 161):
+            self.I_layout["B"].append([i, 0])
+
+        for i in range(91, 168):
+            if not i in self.I_layout["B"]:
+                self.I_layout["C"].append([i, 0])
+
+
+        self.II_layout = {
+            "A" : [],
+            "B" : [],
+            "C" : []
+        }
+        for i in range(1, 20):
+            self.II_layout["A"].append([i, 0])
+        for i in range(25, 40):
+            self.II_layout["A"].append([i, 0])
+        for i in range(45, 60):
+            self.II_layout["A"].append([i, 0])
+        for i in range(67, 86):
+            self.II_layout["A"].append([i, 0])
+        
+        for i in range(1, 91):
+            if not i in self.II_layout["A"]:
+                self.II_layout["B"].append([i, 0])
+
+        for i in range(91, 100):
+            self.II_layout["A"].append([i, 0])
+        for i in range(114, 119):
+            self.II_layout["A"].append([i, 0])
+        for i in range(133, 136):
+            self.II_layout["A"].append([i, 0])
+        for i in range(150, 154):
+            self.II_layout["A"].append([i, 0])
+
+        for i in range(100, 108):
+            self.II_layout["B"].append([i, 0])
+        for i in range(119, 127):
+            self.II_layout["B"].append([i, 0])
+        for i in range(136, 144):
+            self.II_layout["B"].append([i, 0])
+        for i in range(154, 162):
+            self.II_layout["B"].append([i, 0])
+        
+        for i in range(91, 168):
+            if not i in self.II_layout["A"] and not i in self.II_layout["B"]:
+                self.II_layout["C"].append([i, 0])
+
+        # for i in self.II_layout["A"]:
+        #     self.containers[i].setColor(QColor(255, 0, 0))
+        # for i in self.II_layout["B"]:
+        #     self.containers[i].setColor(QColor(255, 255, 0))
+        # for i in self.II_layout["C"]:
+        #     self.containers[i].setColor(QColor(255, 255, 255))
+
+    def setupABCLayout(self, layout:dict, df:pd.DataFrame, col:str, df_size):
+        # print(df.index.size)
+        k = 0
+        for key in layout:
+            for i in range(len(layout[key])):
+                container = self.containers[layout[key][i][0]]
+                size = container.size
+                if container.isSideWalk:
+                    continue
+                
+                for j in range(size):
+                    df.at[k, col] = layout[key][i][0]
+                    k += 1
+                if k > df_size:
+                    return layout
+        return layout
+
+    def sortTheDataFrame(self, map_to_sales_num:list, df:pd.DataFrame, key:str):
+        ndf = []
+        # print(map_to_sales_num)
+        for i in range(len(map_to_sales_num)):
+            ndf += list(df[ df[key] == map_to_sales_num[i][0] ].sort_values(by="銷售數量", ascending=False).values)
+
+        return pd.DataFrame(ndf, columns=df.columns)
+
+    def statistic(self):
+        df = pd.read_excel("./data.xlsx", sheet_name="總表")
+        typenames = list(set(df.型號))
+        meterialnames = list(set(df.料號))
+
+        # sort type
+        ## find out which type is best sale
+        types_map_to_sales_num = []
+        for i in range(len(typenames)):
+            types_map_to_sales_num.append([typenames[i], df[df.型號 == typenames[i]].銷售數量.sum()])
+        types_map_to_sales_num = sorted(types_map_to_sales_num, key=lambda x : x[1], reverse=True)  # sort by sale number
+
+        ndf = self.sortTheDataFrame(types_map_to_sales_num, df, "型號")
+        # setup layout
+        self.setupABCLayout(self.I_layout, ndf, "by_style_I", df.index.size)
+        self.setupABCLayout(self.II_layout, ndf, "by_style_II", df.index.size)
+
+
+        # sort meterial
+        ## find out which meterail is best sale
+        meterial_map_to_sales_num = []
+        for i in range(len(meterialnames)):
+            meterial_map_to_sales_num.append([meterialnames[i], df[df.料號 == meterialnames[i]].銷售數量.sum()])
+        sorted(meterial_map_to_sales_num, key=lambda x : x[1], reverse=True)
+        ndf = self.sortTheDataFrame(meterial_map_to_sales_num, ndf, "料號")
+        # setup layout
+        self.setupABCLayout(self.I_layout, ndf, "by_meterial_I", df.index.size)
+        self.setupABCLayout(self.II_layout, ndf, "by_meterial_II", df.index.size)
+
+        ndf = ndf.sort_values(by="銷售數量")
+        ndf = ndf.dropna()
+        writer = pd.ExcelWriter("./layout.xlsx", engine="xlsxwriter")
+        ndf.to_excel(writer, sheet_name="layout")
+        writer.save()
+        writer.close()
+        self.data = ndf
+
+        self.A_list = pd.DataFrame(self.data.values[0:543], columns=ndf.columns)
+        self.B_list = pd.DataFrame(self.data.values[543:1354], columns=ndf.columns)
+        self.C_list = pd.DataFrame(self.data.values[1354:], columns=ndf.columns)
+
+        # print(self.generateOrder())
         
     def createNewWindow(self):
-        print("show window")
-        window = Window()
-        window.show()
-        self.windows.append(window)
+        self.orders = self.generateOrder()
+
+        # print("show window")
+        # window = Window()
+        # window.show()
+        # self.windows.append(window)
 
     def testFunction(self):
         print(self.distanceBetweenTwoPoints1F(self.containers[3], self.containers[67]))
         pass    
 
-    def computeLengthFunction(self):
-        pathType = self.pathtype.toPlainText()
-        if(pathType == "MTLI"):
-            times1F, times2F, length1F, length2F, cross = self.MTLIPath()
-        else:
-            times1F, times2F, length1F, length2F, cross = self.ZPath()
+    def generateOrder(self):
+        A = int(self.A.toPlainText()) * 0.01
+        B = int(self.B.toPlainText()) * 0.01
+        C = int(self.C.toPlainText()) * 0.01
+        # A = 0.2
+        # B = 0.4
+        # C = 0.4 
 
-        velocity = self.velocity.toPlainText()
-        if velocity == '':
-            velocity = 1
-        else:
-            velocity = int(velocity)
+        numOfOrder = int(self.num_of_order.toPlainText())
+        # numOfOrder = 5
+        order = []
         
-        time = 0
-        time1F = length1F / velocity + 20*times1F
-        time2F = length2F / velocity + 20*times2F
+        for i in range(numOfOrder):
+            # generate item number
+            num = random.randint(7, 256)
+            # num = 20
+            numA = round(num * A)
+            numB = round(num * B)
+            numC = num - numA - numB
+            
+            tempdata = {
+                "S_I" : [],
+                "S_II" : [],
+                "M_I" : [],
+                "M_II" : []
+            }
+            if(numA > 0):
+                temporder = self.A_list.sample(numA)
+                tempdata["S_I"] += list(temporder.by_style_I)
+                tempdata["S_II"] += list(temporder.by_style_II)
+                tempdata["M_I"] += list(temporder.by_meterial_I)
+                tempdata["M_II"] += list(temporder.by_meterial_II)
 
-        self.catchTargetTime1F.setText("1樓揀貨時間 = %.3fs" % time1F)
-        self.catchTargetTime2F.setText("2樓揀貨時間 = %.3fs" % time2F)
+            if(numB > 0):
+                temporder = self.B_list.sample(numB) 
+                tempdata["S_I"] += list(temporder.by_style_I)
+                tempdata["S_II"] += list(temporder.by_style_II)
+                tempdata["M_I"] += list(temporder.by_meterial_I)
+                tempdata["M_II"] += list(temporder.by_meterial_II)
 
-        if cross:
-            self.totalCatchTargetTime1F.setText("總揀貨時間 = %.3fs" % (time1F + time2F + 30))
-        else:
-            self.totalCatchTargetTime1F.setText("總揀貨時間 = %.3fs" % (time1F + time2F))
+            if(numC > 0):
+                temporder = self.C_list.sample(numC)
+                tempdata["S_I"] += list(temporder.by_style_I)
+                tempdata["S_II"] += list(temporder.by_style_II)
+                tempdata["M_I"] += list(temporder.by_meterial_I)
+                tempdata["M_II"] += list(temporder.by_meterial_II)
+            # print(tempdata)
+            for key in tempdata:
+                kind = tempdata[key]
+                F1 = []
+                F2 = []
+                for j in range(len(kind)):
+                    if(kind[j] < 91):
+                        F1.append(kind[j])
+                    else:
+                        F2.append(kind[j])
+            
+                tempdata[key] = {
+                    "1F" : F1,
+                    "2F" : F2
+                }
+            # print(tempdata)
+
+            order.append(tempdata)
+
+        return order
+
+    def computeLengthFunction(self):
+        velocity = self.velocity.toPlainText()
+        orders = self.orders
+        output = {}
+        for key1 in ("M_", "Z_"):
+            for key in ("S_I", "S_II", "M_I", "M_II"):
+                output[key1 + key] = {
+                    "time1F" : 0,
+                    "time2F" : 0,
+                    "length1F" : 0,
+                    "length2F" : 0,
+                    "totalLength" : 0,
+                    "totalTime" : 0
+                }
+        for i in range(len(orders)):
+            for key in orders[i]:
+                self.order = orders[i][key]["1F"]
+                self.order_2 = orders[i][key]["2F"]
+                times1F, times2F, length1F, length2F, cross = self.MTLIPath()
+                
+                if velocity == '':
+                    velocity = 1
+                else:
+                    velocity = int(velocity)
+
+                time = 0
+                time1F = length1F / velocity + 20*times1F
+                time2F = length2F / velocity + 20*times2F
+
+                if cross:
+                    time = time1F + time2F + 30
+                else:
+                    time = time1F + time2F
+                
+                output["M_" + key]["time1F"] = time1F
+                output["M_" + key]["time2F"] = time2F
+                output["M_" + key]["length1F"] = length1F
+                output["M_" + key]["length2F"] = length2F
+                output["M_" + key]["totalLength"] = length1F + length2F
+                output["M_" + key]["totalTime"] = time
+        
+
+        for i in range(len(orders)):
+            for key in orders[i]:
+                self.order = orders[i][key]["1F"]
+                self.order_2 = orders[i][key]["2F"]
+                times1F, times2F, length1F, length2F, cross = self.ZPath()
+                
+                if velocity == '':
+                    velocity = 1
+                else:
+                    velocity = int(velocity)
+
+                time = 0
+                time1F = length1F / velocity + 20*times1F
+                time2F = length2F / velocity + 20*times2F
+
+                if cross:
+                    time = time1F + time2F + 30
+                else:
+                    time = time1F + time2F
+
+                output["Z_" + key]["time1F"] = time1F
+                output["Z_" + key]["time2F"] = time2F
+                output["Z_" + key]["length1F"] = length1F
+                output["Z_" + key]["length2F"] = length2F
+                output["Z_" + key]["totalLength"] = length1F + length2F
+                output["Z_" + key]["totalTime"] = time
+
+        noutput = {}
+        nnoutput = self.output
+        
+        for key1 in output:
+            noutput[key1 + "_" + self.numOfSideWalk_str] = output[key1]
+            for key2 in output[key1]:
+                noutput[key1 + "_" + self.numOfSideWalk_str][key2] = noutput[key1 + "_" + self.numOfSideWalk_str][key2] / len(orders)
+            noutput[key1 + "_" + self.numOfSideWalk_str]["kind"] = key1 + "_" + self.numOfSideWalk_str
+            nnoutput.append(noutput[key1 + "_" + self.numOfSideWalk_str])
+        self.output = nnoutput
+        df = pd.DataFrame(nnoutput)
+        df = df.set_index("kind")
+        df.to_excel("./output.xlsx")
+        # book = load_workbook("./output.xlsx")
+        # writer = pd.ExcelWriter("./output.xlsx", engine = 'openpyxl')
+        # writer.book = book
+        # for key in noutput:
+        #     df = pd.DataFrame.from_dict(noutput[key], orient='columns')
+        #     df.to_excel(writer, sheet_name=key)
+        # writer.save()
+        # writer.close()
+
+        # pathType = self.pathtype.toPlainText()
+        # if(pathType == "MTLI"):
+        #     times1F, times2F, length1F, length2F, cross = self.MTLIPath()
+        # else:
+        #     times1F, times2F, length1F, length2F, cross = self.ZPath()
+
+        # velocity = self.velocity.toPlainText()
+        # if velocity == '':
+        #     velocity = 1
+        # else:
+        #     velocity = int(velocity)
+        
+        # time = 0
+        # time1F = length1F / velocity + 20*times1F
+        # time2F = length2F / velocity + 20*times2F
+
+        # self.catchTargetTime1F.setText("MTLI 揀貨時間 = %.3fs" % time1F)
+        # self.catchTargetTime2F.setText("Z    揀貨時間 = %.3fs" % time2F)
+
+        # if cross:
+        #     self.totalCatchTargetTime1F.setText("總揀貨時間 = %.3fs" % (time1F + time2F + 30))
+        # else:
+        #     self.totalCatchTargetTime1F.setText("總揀貨時間 = %.3fs" % (time1F + time2F))
 
     def ZPath(self):
         originalOrder1F, seq1F, length1F = self.ZPath1()
@@ -173,17 +473,17 @@ class Window(QMainWindow, Ui_MainWindow):
         else:
             crossFloor = False
         totalLength = length1F + length2F
-        self.pathLength.setText("Path length = %.3fm" % (totalLength))
-        self.pathSeq.setText("行走順序 : %s %s" % (str(seq1F), str(seq2F)))
+        # self.pathLength.setText("Path length = %.3fm" % (totalLength))
+        # self.pathSeq.setText("行走順序 : %s %s" % (str(seq1F), str(seq2F)))
         return originalOrder1F, originalOrder2F, length1F, length2F, crossFloor
 
     def ZPath1(self):
-        order = self.order.toPlainText()
+        order = self.order # .toPlainText()
         if order == '':
             return 0, [], 0
-        order = order.split(' ')
+        # order = order.split(' ')
         originalOrder = order = [int(i) for i in order if i != '']
-        print("ZPATH 1 order = ", order)
+        # print("ZPATH 1 order = ", order)
         order = sorted(list(set(order)))
 
         parts1 = [i for i in order if i in range(1, 25)]
@@ -216,15 +516,14 @@ class Window(QMainWindow, Ui_MainWindow):
         points, length = self.lengthOfSequence(seq, 1)
         self.drawPath(points)
         return len(originalOrder), seq, length
-        # self.pathLength.setText("Path length = %.3fm" % (length))
-        # self.pathSeq.setText("行走順序 :%s" % ())
+
         pass
 
     def ZPath2(self):
-        order = self.order_2.toPlainText()
+        order = self.order_2 # .toPlainText()
         if order == '':
             return 0, [], 0
-        order = order.split(' ')
+        # order = order.split(' ')
         order = [int(i) for i in order if i != '']
         originalOrder = order
         order = sorted(list(set(order)))
@@ -270,11 +569,12 @@ class Window(QMainWindow, Ui_MainWindow):
         print(text)
         sidewalk = text.split(' ')
         print(sidewalk)
-        sidewalk = [int(i) for i in sidewalk if i != ''] 
+        sidewalk = [int(i) for i in sidewalk if i != '']
+        self.numOfSideWalk_str = str(int(len(sidewalk) / 2))
         i = 0
         while(i < len(sidewalk)):
-            self.containers[sidewalk[i]].hide()
-            self.containers[sidewalk[i + 1]].hide()
+            self.containers[sidewalk[i]].setSidewalk()
+            self.containers[sidewalk[i + 1]].setSidewalk()
             if sidewalk[i] < 91:
                 self.sidewalkPoint_1F_L.append(self.containers[sidewalk[i]].coordinary)
                 self.sidewalkPoint_1F_R.append(self.containers[sidewalk[i + 1]].coordinary)
@@ -290,20 +590,36 @@ class Window(QMainWindow, Ui_MainWindow):
         print(self.sidewalkPoint_1F_L)
         print(self.sidewalkPoint_1F_R)
 
-        order = self.order.toPlainText()
-        order = order.split(' ')
-        print(order)
-        order = [int(i) for i in order if i != '']
-        for i in order:
-            self.containers[i].setOrder()
+        # order = self.order.toPlainText()
+        # order = order.split(' ')
+        # print(order)
+        # order = [int(i) for i in order if i != '']
+        # for i in order:
+        #     self.containers[i].setOrder()
 
-        order = self.order_2.toPlainText()
-        order = order.split(' ')
-        print(order)
-        order = [int(i) for i in order if i != '']
-        for i in order:
-            self.containers[i].setOrder()
+        # order = self.order_2.toPlainText()
+        # order = order.split(' ')
+        # print(order)
+        # order = [int(i) for i in order if i != '']
+        # for i in order:
+        #     self.containers[i].setOrder()
 
+        for i in range(len(self.I_layout["A"])):
+            self.containers[ self.I_layout["A"][i][0] ].distance = self.I_layout["A"][i][1] = self.distanceBetweenTwoPoints1F(self.containers[ self.I_layout["A"][i][0] ], self.containers[1])[1]
+        for i in range(len(self.I_layout["B"])):
+            self.containers[ self.I_layout["B"][i][0] ].distance = self.I_layout["B"][i][1] = self.distanceBetweenTwoPoints2F(self.containers[ self.I_layout["B"][i][0] ], self.containers[94])[1]
+        for i in range(len(self.I_layout["C"])):
+            self.containers[ self.I_layout["C"][i][0] ].distance = self.I_layout["C"][i][1] = self.distanceBetweenTwoPoints2F(self.containers[ self.I_layout["C"][i][0] ], self.containers[94])[1]
+
+        for key in self.II_layout: # key = A, B, C
+            for i in range(len(self.II_layout[key])): 
+                self.II_layout[key][i][1] = self.containers[ self.II_layout[key][i][0] ].distance
+
+        self.statistic()
+        
+
+        # print(json.dumps(self.I_layout, indent=4))
+    
     def clearFunction(self):
         for i in self.containers:
             self.containers[i].toNormal()
@@ -321,6 +637,8 @@ class Window(QMainWindow, Ui_MainWindow):
         for i in range(len(self.lines)):
             self.scene.removeItem(self.lines[i])
         self.lines.clear()
+
+        self.output = []
         
     def distanceBetweenTwoPoints1F(self, p1:Container, p2:Container):
         if (p1.num in self.parts[0] and p2.num in self.parts[0]) or (p1.num in self.parts[1] and p2.num in self.parts[1]):
@@ -407,7 +725,7 @@ class Window(QMainWindow, Ui_MainWindow):
         length = 0
         i = 0
         while(i < len(seq) - 1):
-            print("distance Between %d <---> %d" % (seq[i], seq[i+1]))
+            # print("distance Between %d <---> %d" % (seq[i], seq[i+1]))
             if(floor == 1):
                 ps ,tempLength = self.distanceBetweenTwoPoints1F(self.containers[seq[i]], self.containers[seq[i + 1]])
             else:
@@ -428,8 +746,8 @@ class Window(QMainWindow, Ui_MainWindow):
             i+= 1
 
     def MTLIPath1F(self):
-        order = self.order.toPlainText()
-        order = order.split(' ')
+        order = self.order # .toPlainText()
+        # order = order.split(' ')
         print(order)
         
         order = [int(i) for i in order if i != '']
@@ -447,12 +765,12 @@ class Window(QMainWindow, Ui_MainWindow):
             j = 1
             minLength = 1000000
             seq = copy.deepcopy(optimalSeq)
-            print("insert %d" % order[i])
+            # print("insert %d" % order[i])
             while(j < len(seq)):
                 tempSeq = copy.deepcopy(seq)
                 tempSeq.insert(j, order[i])
-                print("seq : ", seq)
-                print("tempSeq : ",tempSeq)
+                # print("seq : ", seq)
+                # print("tempSeq : ",tempSeq)
                 # input()
                 tempPoints, tempLength = self.lengthOfSequence(tempSeq, 1)
                 if(tempLength < minLength):
@@ -460,17 +778,18 @@ class Window(QMainWindow, Ui_MainWindow):
                     optimalSeq = tempSeq
                     optimalPoints = tempPoints
                 j+= 1
-            print(optimalSeq)
+            # print(optimalSeq)
             i += 1
         self.drawPath(optimalPoints)
 
         return len(originalOrder), optimalSeq, minLength
 
     def MTLIPath2F(self):
-        order = self.order_2.toPlainText()
-        order = order.split(' ')
-
+        order = self.order_2 # .toPlainText()
+        # order = order.split(' ')
+    
         order = [int(i) for i in order if i != '']
+
         originalOrder = order
         order = list(set(order))
 
@@ -483,12 +802,12 @@ class Window(QMainWindow, Ui_MainWindow):
             j = 1
             minLength = 1000000
             seq = copy.deepcopy(optimalSeq)
-            print("insert %d" % order[i])
+            # print("insert %d" % order[i])
             while(j < len(seq)):
                 tempSeq = copy.deepcopy(seq)
                 tempSeq.insert(j, order[i])
-                print("seq : ", seq)
-                print("tempSeq : ",tempSeq)
+                # print("seq : ", seq)
+                # print("tempSeq : ",tempSeq)
                 # input()
                 tempPoints, tempLength = self.lengthOfSequence(tempSeq, 2)
                 if(tempLength < minLength):
@@ -496,7 +815,7 @@ class Window(QMainWindow, Ui_MainWindow):
                     optimalSeq = tempSeq
                     optimalPoints = tempPoints
                 j+= 1
-            print(optimalSeq)
+            # print(optimalSeq)
             i += 1
         self.drawPath(optimalPoints)
 
@@ -510,8 +829,8 @@ class Window(QMainWindow, Ui_MainWindow):
             crossFloor = True
         else:
             crossFloor = False
-        self.pathLength.setText("Path length = %.3fm" % (totalLength))
-        self.pathSeq.setText("行走順序 :%s %s" % (str(optimalSeq1F), str(optimalSeq2F)))
+        # self.pathLength.setText("Path length = %.3fm" % (totalLength))
+        # self.pathSeq.setText("行走順序 :%s %s" % (str(optimalSeq1F), str(optimalSeq2F)))
         return originalOrder1F, originalOrder2F, length1F, length2F, crossFloor
 
         # Identify sidewalk

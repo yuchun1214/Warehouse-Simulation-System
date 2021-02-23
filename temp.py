@@ -112,3 +112,24 @@ coordy = 13
 for i in range(135, 132, -1):
     self.containers[i].coordinary = [7.6, coordy]
     coordy -= 2
+
+
+
+for i in range(25, 44):
+    self.containers[i].size = 14
+for i in range(45, 64):
+    self.containers[i].size=  16
+for i in range(67, 91):
+    self.containers[i].size = 18
+
+
+for i in range(94, 114):
+    self.containers[i].size = 18
+for i in range(151, 168):
+    self.containers[i].size = 18
+for i in range(114, 133):
+    self.containers[i].size = 14
+for i in range(133, 150):
+    self.containers[i].size = 16
+for i in range(91, 94):
+    self.containers[i].size = 30
