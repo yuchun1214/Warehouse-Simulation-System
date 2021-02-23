@@ -3,7 +3,7 @@
         "pillar": [],
         "fixarea": [
             {
-                "name": "廁所",
+                "name": "toilet",
                 "pos": [
                     360,
                     0
@@ -12,7 +12,7 @@
                 "height": 45
             },
             {
-                "name": "樓梯",
+                "name": "stair",
                 "pos": [
                     220,
                     599
@@ -21,7 +21,7 @@
                 "height": 15
             },
             {
-                "name": "貨梯",
+                "name": "elevator",
                 "pos": [
                     220,
                     614
@@ -30,7 +30,7 @@
                 "height": 30
             },
             {
-                "name": "樓梯",
+                "name": "stair",
                 "pos": [
                     720,
                     599
@@ -39,7 +39,7 @@
                 "height": 15
             },
             {
-                "name": "貨梯",
+                "name": "elevator",
                 "pos": [
                     720,
                     614

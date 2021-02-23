@@ -98,8 +98,8 @@ class Window(QMainWindow, Ui_MainWindow):
         self.containers[65].v_pos[1] += 10
         # print("66 v_pos : ",self.containers[66].v_pos)
         
-        with open("./config2.json", "w") as file:
-            json.dump(self.config, file, ensure_ascii=False, indent=4)
+        # with open("./config2.json", "w") as file:
+        #     json.dump(self.config, file, ensure_ascii=False, indent=4)
 
         for data in self.config["fix"]["fixarea"]:
             self.scene.addItem(Building(data, self.scene))
